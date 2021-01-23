@@ -8,14 +8,14 @@ export default class Deps {
     }
   }
 
-  static get<T>(type: any): T {
-    try {
+  public static get<T>(type: any): T {
+    try {      
       const service = this.deps.find(t => t instanceof type);
       return service || this.add(new type());
     } catch { return null; }
   }
 
-  private static add<T>(instance: T): T {
+  public static add<T>(instance: T): T {
     this.deps.push(instance);
     return instance;
   }

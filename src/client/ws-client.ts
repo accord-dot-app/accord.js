@@ -1,35 +1,43 @@
-import { io } from 'socket.io-client';
+import io from 'socket.io-client';
 import { env } from '../env';
-import Deps from '../utils/deps';
+import { Channel } from '../structures/channel';
+import { Message } from '../structures/message';
 import { Client } from './client';
-
-const client = Deps.get<Client>(Client);
 
 export class WSClient {
   public readonly socket = io(env.url);
 
-  async ready() {
-    const channelIds: string[] = channels.map(d => d.id);
-    const guildIds: string[] = [];
+  constructor(private client: Client) {
+    this.socket.on('connect', () => console.log('Connected to ws client'));
+    this.socket.connect();
+  }
 
-    const botMembers = await GuildMember.find({ user: this.self.id });
-    for (const member of botMembers) {
-      const guild = await Guild.findById(member.guildId);
-      guildIds.push(guild.id);
-
-      for (const channel of guild.channels)
-        channelIds.push(channel as any);
-    }
-
+  public async ready() {    
     this.socket.emit('READY', {
-      channelIds: Array
-        .from(client.guilds.values())
-        .flatMap(g => g.channels.map(c => c._id))
-        .concat(this.channelService.dmChannels.map(c => c._id)),
-      guildIds: Array.from(client.guilds.keys()),
-      user: client.user
+      channelIds: Array.from(this.client.channels.keys()),
+      guildIds: Array.from(this.client.guilds.keys()),
+      user: this.client.user
     });
 
-    Log.info('Initialized bot', 'bot');
+    this.hookEvents();
+
+    this.client.emitter.emit('ready');
+  }
+
+  private hookEvents() {    
+    this.socket.on('MESSAGE_CREATE', async (message: any) => {
+      message = new Message(message, this.client);      
+      if (message.author.id === this.client.user.id) return;
+      
+      this.client.emitter.emit('message', message);
+    });
+  }
+
+  public sendMessage(content: string, channel: Channel) {
+    this.socket.emit('MESSAGE_CREATE', {
+      author: this,
+      channel,
+      content
+    });
   }
 }

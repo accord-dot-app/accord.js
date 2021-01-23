@@ -1,4 +1,4 @@
-export interface User {
+export class User {
   /** 18 digit snowflake ID of the user. */
   id: string;
   /** Badges that the user has. */
@@ -15,6 +15,22 @@ export interface User {
   status: StatusType;
   /** The voice state of the user. */
   voice: UserVoiceState;
+
+  friendRequests: FriendRequest[];
+  friends: string[];
+
+  constructor(user: any) {
+    this.id = user._id;
+    this.badges = user.badges;
+    this.bot = user.bot;
+    this.username = user.username;
+    this.createdAt = user.createdAt;
+    this.avatarURL = user.avatarURL;
+    this.status = user.status;
+    this.voice = user.voice;
+    this.friendRequests = user.friendRequests;
+    this.friends = user.friends;
+  }
 }
 
 export type StatusType = 'ONLINE' | 'DND' | 'IDLE' | 'OFFLINE';
